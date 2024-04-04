@@ -2,6 +2,7 @@ require("dotenv").config();
 let User = require("../model/User");
 let bcrypt = require('bcrypt');
 let salt = Number(process.env.SALT);
+let jwt = require('jsonwebtoken');
 
 let controller = {
   createUser: async (req, res) => {
@@ -14,18 +15,25 @@ let controller = {
     res.send("Usuário criado");
   },
   login: async (req, res) => {
-    let email = req.body.email;
-    let password = req.body.password;
 
-    let user = await User.findOne({ email });
-    if (!user) return res.status(404).send("User not found!");
+    // Verifica se o usuário existe no banco de dados.
 
-    let hash = user.password;
-    let validPassword = await bcrypt.compare(password, hash);
+    let user = await User.findOne({ email: req.body.email });
+    if (!user) return res.status(401).send("Email or password wrong!");
 
-    if (!validPassword) return res.status(404).send("Email or password wrong!")
+    // Verifica se a senha fornecida é compativel com o hash on banco de dados;
+    if (await bcrypt.compare(req.body.password, user.password) == false) return res.status(401).send("Email or password wrong!")
 
-    res.send(validPassword);
+    // Cria token de acesso e o insere no cabeçalho da resposta
+    try { 
+      let token = jwt.sign({email: req.body.email}, process.env.TOKEN_SECRET);
+      res.header("authorization-token", token)
+      res.send("User logged");
+
+    } catch (err) { 
+      console.log(err);
+    }
+
   },
 };
 
