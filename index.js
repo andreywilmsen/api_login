@@ -3,6 +3,7 @@ const express = require("express");
 const app = express();
 const PORT = process.env.PORT;
 const router = require("./routes/routes");
+// Conexão com o banco de dados
 const db = require("./db/conn");
 
 app.use("/", express.json(), router);
