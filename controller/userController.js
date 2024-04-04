@@ -25,15 +25,39 @@ let controller = {
     if (await bcrypt.compare(req.body.password, user.password) == false) return res.status(401).send("Email or password wrong!")
 
     // Cria token de acesso e o insere no cabeçalho da resposta
-    try { 
-      let token = jwt.sign({email: req.body.email}, process.env.TOKEN_SECRET);
+    try {
+      let token = jwt.sign({ email: req.body.email }, process.env.TOKEN_SECRET, { expiresIn: 60 });
       res.header("authorization-token", token)
       res.send("User logged");
 
-    } catch (err) { 
+    } catch (err) {
       console.log(err);
     }
+  },
+  auth: async (req, res, next) => {
 
+    // Verifica se existe um token armazenado no header
+
+    let token = req.header("authorization-token");
+    if (!token) return res.status(401).send("Access Denied");
+
+    // Caso exista, verifica se esse token é valido, batendo ele com o segredo
+
+    try {
+      let validation = jwt.verify(req.header("authorization-token"), process.env.TOKEN_SECRET);
+
+      // Atribui ao user da resposta o resultado da validação
+
+      res.user = validation;
+
+      //  Envia o usuario como resposta e avança para o proximo midware se existir
+
+      res.send(res.user)
+      next();
+
+    } catch (err) {
+      res.status(401).send(err);
+    }
   },
 };
 
