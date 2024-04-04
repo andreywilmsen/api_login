@@ -24,20 +24,6 @@ let controller = {
 
     res.send("Usuário criado");
   },
-  edit: async (req, res) => {
-
-    // Verifica se os dados enviados estão cumprindo as definições de tamanhos de Strings
-    const { error } = validation.editValidation(req.body);
-    if (error) return res.status(401).send(error.message);
-
-    let name = req.body.name;
-    let email = req.body.email;
-    let password = await bcrypt.hash(req.body.password, salt);
-
-    let response = await User.findOneAndUpdate({ email }, { name, email, password });
-
-    res.send("Usuário editado com sucesso!");
-  },
   login: async (req, res) => {
 
     // Verifica se os dados enviados estão cumprindo as definições de tamanhos de Strings
@@ -62,8 +48,35 @@ let controller = {
       console.log(err);
     }
   },
-  auth: async (req, res, next) => {
+  edit: async (req, res, next) => {
 
+    // Verifica se o token que está ativo (usuário logado) é administrador, caso não, não possibilita a edição de cadastro
+    let userAuth = (await User.findOne({ email: res.locals.authToken.email })).admin;
+    if (userAuth === false) return res.status(401).send("Function authorized for administrators only")
+
+    // Verifica se os dados enviados estão cumprindo as definições de tamanhos de Strings
+    const { error } = validation.editValidation(req.body);
+    if (error) return res.status(401).send(error.message);
+
+    let name = req.body.name;
+    let email = req.body.email;
+
+    let user = await User.findOne({ email });
+
+    // Compara se o password antigo não bater com o hash no password cadastrado, retorna com o password antigo errado.
+    if (bcrypt.compare(req.body.oldPassword, user.password) === "false") return res.status(401).send("The old password is wrong!")
+
+    let newPassword = await bcrypt.hash(req.body.newPassword, salt);
+    let confirmNewPassword = req.body.confirmNewPassword
+
+    // Compara se o password novo digitado e a confirmação do password digitado batem, caso não, retorna como do not match.
+    if (req.body.newPassword != confirmNewPassword) return res.status(401).send("Passwords do not match!")
+
+    let response = await User.findOneAndUpdate({ email }, { name, email, password: newPassword });
+
+    res.send(response);
+  },
+  auth: async (req, res, next) => {
     // Verifica se existe um token armazenado no header
 
     let token = req.header("authorization-token");
@@ -72,17 +85,16 @@ let controller = {
     // Caso exista, verifica se esse token é valido, batendo ele com o segredo
 
     try {
-      let validation = jwt.verify(req.header("authorization-token"), process.env.TOKEN_SECRET);
+      let validationToken = await jwt.verify(req.header("authorization-token"), process.env.TOKEN_SECRET);
 
       // Atribui ao user da resposta o resultado da validação
+      req.user = validationToken;
 
-      res.user = validation;
+      // Passa o token verificado para res.locals.authToken para o proximo middleware conseguir ler o token e verificar se ainda está válido
+      res.locals.authToken = validationToken
 
-      //  Envia o usuario como resposta e avança para o proximo midware se existir
-
-      res.send(res.user)
+      //  Avança para o proximo midware
       next();
-
     } catch (err) {
       res.status(401).send(err);
     }
