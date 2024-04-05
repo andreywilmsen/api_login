@@ -9,6 +9,7 @@ let controller = {
   register: async (req, res) => {
 
     // Verifica se os dados enviados estão cumprindo as definições de tamanhos de Strings
+
     const { error } = validation.registerValidation(req.body);
     if (error) return res.status(401).send(error.message);
 
@@ -41,17 +42,24 @@ let controller = {
     // Cria token de acesso e o insere no cabeçalho da resposta
     try {
       let token = jwt.sign({ email: req.body.email }, process.env.TOKEN_SECRET, { expiresIn: 600 });
+
       res.header("authorization-token", token)
-      res.send("User logged");
+
+      res.status(200).json({
+        status: "success",
+        data: token
+      });
 
     } catch (err) {
       console.log(err);
     }
   },
-  edit: async (req, res, next) => {
+  edit: async (req, res) => {
+    // Email de quem está tentando fazer a edição
+    let validationToken = req.body.validationToken
 
     // Verifica se o token que está ativo (usuário logado) é administrador, caso não, não possibilita a edição de cadastro
-    let userAuth = (await User.findOne({ email: res.locals.authToken.email })).admin;
+    let userAuth = (await User.findOne({ email: validationToken })).admin;
     if (userAuth === false) return res.status(401).send("Function authorized for administrators only")
 
     // Verifica se os dados enviados estão cumprindo as definições de tamanhos de Strings
@@ -74,7 +82,7 @@ let controller = {
 
     let response = await User.findOneAndUpdate({ email }, { name, email, password: newPassword });
 
-    res.send(response);
+    res.status(200).json({ status: "success", data: "Dados do usuário editados com sucesso!" });
   },
   auth: async (req, res, next) => {
     // Verifica se existe um token armazenado no header
@@ -85,16 +93,12 @@ let controller = {
     // Caso exista, verifica se esse token é valido, batendo ele com o segredo
 
     try {
-      let validationToken = await jwt.verify(req.header("authorization-token"), process.env.TOKEN_SECRET);
+      let validationToken = await jwt.verify(token, process.env.TOKEN_SECRET);
 
       // Atribui ao user da resposta o resultado da validação
       req.user = validationToken;
 
-      // Passa o token verificado para res.locals.authToken para o proximo middleware conseguir ler o token e verificar se ainda está válido
-      res.locals.authToken = validationToken
-
-      //  Avança para o proximo midware
-      next();
+      res.status(200).json({ status: "success", data: validationToken });
     } catch (err) {
       res.status(401).send(err);
     }

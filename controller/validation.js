@@ -20,6 +20,7 @@ const loginValidation = (data) => {
 
 const editValidation = (data) => {
     const schema = Joi.object({
+        validationToken: Joi.string().required(),
         name: Joi.string().required().min(3).max(50),
         email: Joi.string().required().min(5).max(100),
         oldPassword: Joi.string().required().min(5).max(100),

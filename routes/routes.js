@@ -6,6 +6,9 @@ router.post("/login", apiController.login);
 
 router.post("/register", apiController.register);
 
-router.put("/edit", apiController.auth, apiController.edit);
+router.put("/edit", apiController.edit);
+
+router.get("/auth", apiController.auth);
+
 
 module.exports = router;
