@@ -26,6 +26,16 @@
         <button onclick="editar()" type="submit">Editar</button>
     </div>
 
+    <div>
+        <h1>Registrar</h1>
+
+        <input id="registerName" type="text" placeholder="name">
+        <input id="registerEmail" type="text" placeholder="email">
+        <input id="registerPassword" type="password" placeholder="Password">
+        <input id="confirmPassword" type="password" placeholder="confirmPassword">
+        <button onclick="cadastrar()" type="submit">Cadastrar</button>
+    </div>
+
     <script>
         function logar() {
             localStorage.clear();
@@ -54,7 +64,6 @@
                 return res.json()
             }).then(json => {
                 if (json.status === "success") {
-                    localStorage.setItem("user-authenticated", json.data)
                     console.log("Usuário autenticado")
                 }
             }).catch(err => {
@@ -62,8 +71,7 @@
             })
         }
         function editar() {
-            let validationToken = localStorage.getItem("user-authenticated");
-
+            let token = localStorage.getItem("token");
             let name = (document.getElementById('name')).value;
             let email = (document.getElementsByClassName('email')[0]).value;
             let oldPassword = (document.getElementById('oldPassword')).value;
@@ -73,16 +81,37 @@
             fetch('http://localhost:8080/edit', {
                 method: 'PUT',
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ validationToken, name, email, oldPassword, newPassword, confirmNewPassword })
+                body: JSON.stringify({ token, name, email, oldPassword, newPassword, confirmNewPassword })
             }).then(res => {
                 return res.json()
             }).then(json => {
-                if (json.status === "success") return
-                console.log(json.data)
+                console.log("Cadastro editado com sucesso!")
             }).catch(err => {
                 console.log(err);
             })
         }
+
+        function cadastrar() {
+            let name = (document.getElementById('registerName')).value;
+            let email = (document.getElementById('registerEmail')).value;
+            let password = (document.getElementById('registerPassword')).value;
+            let confirmPassword = (document.getElementById('confirmPassword')).value;
+
+            fetch('http://localhost:8080/register', {
+                method: 'POST',
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ name, email, password, confirmPassword })
+            }).then(res => {
+                return res.json()
+            }).then(json => {
+                if (json.status = "success") {
+                    console.log("Usuário cadastrado com sucesso!")
+                }
+            }).catch(err => {
+                console.log(err);
+            })
+        }
+
     </script>
 </body>
 

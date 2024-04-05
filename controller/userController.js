@@ -19,11 +19,15 @@ let controller = {
     let name = req.body.name;
     let email = req.body.email;
     let password = await bcrypt.hash(req.body.password, salt);
+    let confirmPassword = req.body.confirmPassword;
+
+    // Verifica se os passwords informados coincidem
+    if (confirmPassword != req.body.password) return res.status(401).send("Passwords do not match!")
 
     let response = await User.create({ name, email, password });
     response.save();
 
-    res.send("Usuário criado");
+    res.status(200).json({ status: "success", data: "Usuário criado com sucesso" });
   },
   login: async (req, res) => {
 
@@ -56,10 +60,12 @@ let controller = {
   },
   edit: async (req, res) => {
     // Email de quem está tentando fazer a edição
-    let validationToken = req.body.validationToken
+
+    let tokenEmail = (await jwt.verify(req.body.token, process.env.TOKEN_SECRET)).email;
 
     // Verifica se o token que está ativo (usuário logado) é administrador, caso não, não possibilita a edição de cadastro
-    let userAuth = (await User.findOne({ email: validationToken })).admin;
+
+    let userAuth = (await User.findOne({ email: tokenEmail })).admin;
     if (userAuth === false) return res.status(401).send("Function authorized for administrators only")
 
     // Verifica se os dados enviados estão cumprindo as definições de tamanhos de Strings
@@ -98,7 +104,7 @@ let controller = {
       // Atribui ao user da resposta o resultado da validação
       req.user = validationToken;
 
-      res.status(200).json({ status: "success", data: validationToken });
+      res.status(200).json({ status: "success" });
     } catch (err) {
       res.status(401).send(err);
     }
