@@ -16,10 +16,6 @@
 
 **Funcionalidades**
 
-Claro, aqui está a atualização da documentação, incluindo a instrução para limpar o local storage antes de fazer a chamada para o endpoint na função `logar()`:
-
-**Funcionalidades**
-
 1. 🚪 **Fazer Login:**
    - Use uma solicitação POST para o endpoint `/login`.
    - Inclua o email e a password do usuário no corpo da solicitação em formato JSON, com as variáveis `email` e `password`.
