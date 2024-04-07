@@ -10,5 +10,4 @@ router.put("/edit", apiController.edit);
 
 router.get("/auth", apiController.auth);
 
-
 module.exports = router;
